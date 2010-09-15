@@ -384,5 +384,23 @@
 			<version>138</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>cryptix</groupId>
+			<artifactId>cryptix</artifactId>
+			<version>gt4</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>cryptix</groupId>
+			<artifactId>cryptix32</artifactId>
+			<version>gt4</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>cryptix</groupId>
+			<artifactId>asn1</artifactId>
+			<version>gt4</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>
