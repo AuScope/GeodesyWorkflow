@@ -6,7 +6,7 @@
  */
 
 // reference local blank image
-Ext.BLANK_IMAGE_URL = 'js/external/ext-2.2/resources/images/default/s.gif';
+Ext.BLANK_IMAGE_URL = 'js/external/extjs/resources/images/default/s.gif';
 
 Ext.namespace('GridSubmit');
 
@@ -107,12 +107,11 @@ GridSubmit.onUploadFile = function(form, action) {
         }
 
         var newFile = new GridSubmit.FileRecord({
-            name: action.result.name,
-            size: action.result.size,
-            subJob: action.result.subJob
+            name		: action.result.name,
+            size		: action.result.size,
+            parentPath	: action.result.parentPath
         });
         fileStore.add(newFile);
-        fileStore.sort('subJob','ASC');
     } else {
         GridSubmit.showError('Error uploading file. '+action.result.error);
     }
@@ -130,12 +129,10 @@ GridSubmit.onFileListResponse = function(response, request) {
         var newFile = new GridSubmit.FileRecord({
             name: resp.files[i].name,
             size: resp.files[i].size,
-            subJob: resp.files[i].subJob,
             parentPath: resp.files[i].parentPath
         });
         fileStore.add(newFile);
     }
-    fileStore.sort('subJob', 'ASC');
 }
 
 
@@ -349,7 +346,6 @@ GridSubmit.deleteFiles = function() {
         var jobIds = new Array();
         for (var i=0; i<selData.length; i++) {
             files.push(selData[i].get('name'));
-            jobIds.push(selData[i].get('subJob'));
         }
         
         Ext.Msg.show({
@@ -366,8 +362,7 @@ GridSubmit.deleteFiles = function() {
                         success: GridSubmit.onDeleteResponse,
                         failure: GridSubmit.onDeleteResponse, 
                         params: { 
-                    	          'files': Ext.encode(files),
-                    	          'subJobId': Ext.encode(jobIds)
+                    	          'files': Ext.encode(files)
                         }
                     });
                 }
@@ -389,18 +384,15 @@ GridSubmit.uploadFile = function(b, e, overwrite) {
                    GridSubmit.confirmOverwrite);
             return;
         }
-        var jobID = Ext.getCmp('jobSelectCombo').getValue();
-        if(jobID == null || jobID == "")
-        	jobID = "Common";
         
+        var jobID = "Common";
         var jobType = Ext.getCmp('jobTypeCombo').getValue();
         Ext.getCmp('filesForm').getForm().submit({
             url: 'uploadFile.do',
             success: GridSubmit.onUploadFile,
             failure: GridSubmit.onUploadFailure,
             params: {
-                      'jobType': jobType,
-                      'subJobId': jobID
+                      'jobType': jobType
             },
             waitMsg: 'Uploading file, please wait...',
             waitTitle: 'Upload file'
@@ -536,7 +528,6 @@ GridSubmit.initialize = function() {
     GridSubmit.FileRecord = Ext.data.Record.create([
         { name: 'name', mapping: 'name' },
         { name: 'size', mapping: 'size' },
-        { name: 'subJob', mapping: 'subJob' },
         { name: 'parentPath', mapping: 'parentPath' }
         
     ]);
@@ -546,7 +537,6 @@ GridSubmit.initialize = function() {
         fields: [
             { name: 'name', type: 'string' },
             { name: 'size', type: 'int' },
-            { name: 'subJob', type: 'string' },
             { name: 'parentPath', type: 'string' }
         ]
     });
@@ -605,12 +595,7 @@ GridSubmit.initialize = function() {
                   { name: 'paramLine', type: 'string' } ],
         data: [['subJob_0', '-d yr doy -expt grid -orbt IGSF -no_ftp -aprfile itrf05.apr']]
     });
-    
-    var subJobStore = new Ext.data.SimpleStore({
-        fields: [ { name: 'paramID', type: 'string' }],
-        data: [['Common']]
-    });
-    
+        
     var paramGrid = new Ext.grid.EditorGridPanel({
         store: paramStore,
         name: 'arguments',
@@ -636,15 +621,7 @@ GridSubmit.initialize = function() {
                 if((myGrid.getStore().getCount()>= 1) && (Ext.getCmp('jobTypeCombo').getValue() == 'single')){
                 	Ext.Msg.alert('Failure', 'Can not add more than one parameter line for a single job.');
                 }else{
-                    //add common field
-                    var SubJobRecord = subJobStore.recordType;
-                    if(subJobStore.getCount()==0)
-                    {
-                       var c = new SubJobRecord({
-                            paramID: 'Common'
-                       });
-                       subJobStore.add(c);
-                    }
+                    
                     var p = new ParamLines({
                          paramID: jobID,
                          paramLine: '-d yr doy -expt grid -orbt IGSF -no_ftp -aprfile itrf05.apr'
@@ -652,11 +629,7 @@ GridSubmit.initialize = function() {
                     //add param line and stop edit the grid
                     myGrid.stopEditing();
                     paramStore.add(p);
-                    //add subJob
-                    c = new SubJobRecord({
-                            paramID: jobID
-                    });
-                    subJobStore.add(c);
+                    
                     //select the inserted row.
                     var pos = myGrid.getStore().getCount() -1;
                     myGrid.selModel.selectRow(pos);
@@ -893,7 +866,7 @@ GridSubmit.initialize = function() {
                 return false;
             }
         }
-        gotoStep(2);
+        gotoStep(1);
         return true;
     };
 
@@ -902,15 +875,7 @@ GridSubmit.initialize = function() {
     var validateMetadata = function(newStep, onSuccesfulValidation) {
         //if (newStep==0 || metadataForm.getForm().isValid()) {
     	if (newStep==0 || true) {
-    	    var jobTypeCombo = Ext.getCmp('jobTypeCombo').getValue();
-    	    var jobSelectCombo = Ext.getCmp('jobSelectCombo');
-    	    if(jobTypeCombo == 'single'){
-    	    	jobSelectCombo.disable();
-    	    }
-    	    else
-    	    {
-    	    	jobSelectCombo.enable();
-    	    }
+    	    var jobTypeCombo = Ext.getCmp('jobTypeCombo').getValue();    	    
     	    if (onSuccesfulValidation)
     	    	onSuccesfulValidation();
             gotoStep(newStep);
@@ -955,8 +920,7 @@ GridSubmit.initialize = function() {
         columns: [
             { header: 'Filename', width: 200, sortable: true, dataIndex: 'name' },
             { header: 'Size', width: 100, sortable: true, dataIndex: 'size',
-                renderer: Ext.util.Format.fileSize, align: 'right' },
-            { header: 'subJob', width: 100, sortable: true, dataIndex: 'subJob' }
+                renderer: Ext.util.Format.fileSize, align: 'right' }
         ],
         sm: new Ext.grid.RowSelectionModel({
             singleSelect: false,
@@ -994,18 +958,6 @@ GridSubmit.initialize = function() {
             style: 'font-weight:bold;',
             text : ''
         },{
-            xtype: 'combo',
-            id: 'jobSelectCombo',
-            name: 'jobSelect',
-            editable: false,
-            mode: 'local',
-            store: subJobStore,
-            triggerAction: 'all',
-            displayField: 'paramID',
-            emptyText: 'Common',
-            fieldLabel: 'Select job to upload for',
-            allowBlank: true
-        },{
             anchor: '100%',
             xtype: 'textfield',
             id: 'fileInputField',
@@ -1018,61 +970,39 @@ GridSubmit.initialize = function() {
         ]
     });
 
-    StationSelect.onSuccessfulSubmit = function() {
-    	gotoStep(1);
-    }
-    
     var jobWizard = {
         id: 'jobwizard-panel',
         layout: 'card',
         activeItem: 0,
         defaults: { layout:'fit', frame: true, buttonAlign: 'right' },
         items: [{
-        	id: 'card-select',
-            title: 'Step 1: Select the station list...',
-            defaults: { border: false },
-            buttons: [{
-                text: '&laquo; Previous',
-                disabled: true
-            }, {
-                text: 'Next &raquo;',
-                handler: StationSelect.okButtonHandler
-            }],
-            items: [ StationSelect.generatePanel() ]
-        },
-        {
             id: 'card-series',
-            title: 'Step 2: Choose a job series...',
+            title: 'Step 1: Choose a job series...',
             defaults: { border: false },
             buttons: [{
-                text: '&laquo; Previous',
-                handler: function() {
-                	gotoStep(0);
-                }
-            }, {
                 text: 'Next &raquo;',
                 handler: validateSeries
             }],
             items: [ seriesForm ]
         }, {
             id: 'card-job',
-            title: 'Step 3: Enter job details...',
+            title: 'Step 2: Enter job details...',
             defaults: { border: false },
             buttons: [{
                 text: '&laquo; Previous',
-                handler: validateMetadata.createDelegate(this, [1])
+                handler: validateMetadata.createDelegate(this, [0])
             }, {
                 text: 'Next &raquo;',
-                handler: validateMetadata.createDelegate(this, [3, GridSubmit.generateSitesDefaultTemplate])
+                handler: validateMetadata.createDelegate(this, [2])
             }],
             items: [ metadataForm ]
         }, {
             id: 'card-files',
-            title: 'Step 4: Add files to job...',
+            title: 'Step 3: Add files to job...',
             defaults: { border: false },
             buttons: [{
                 text: '&laquo; Previous',
-                handler: validateMetadata.createDelegate(this, [2])
+                handler: validateMetadata.createDelegate(this, [1])
             }, {
                 text: 'Submit',
                 handler: GridSubmit.submitJob
@@ -1109,7 +1039,7 @@ GridSubmit.initialize = function() {
             GridSubmit.onWindowUnloading, GridSubmit);
     
     GridSubmit.loadJobObject();
-}
+};
 
 
 Ext.onReady(GridSubmit.initialize);
