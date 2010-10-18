@@ -6,7 +6,7 @@
  */
 
 // reference local blank image
-Ext.BLANK_IMAGE_URL = 'js/external/extjs/resources/images/default/s.gif';
+Ext.BLANK_IMAGE_URL = 'js/ext/resources/images/default/s.gif';
 
 Ext.namespace('JobList');
 
